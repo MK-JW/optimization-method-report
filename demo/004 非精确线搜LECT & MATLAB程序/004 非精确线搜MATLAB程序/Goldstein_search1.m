@@ -1,0 +1,132 @@
+function [alpha_acceptable,x_next,f_next,k]=Goldstein_search1(f_test,g_test,x_current,d_current,rho)
+%==========================================================================
+%函数调用格式：
+%[alpha_acceptable,x_next,f_next,k]=Goldstein_search(@f_test,@g_test,x_current,d_current,rho)
+%--------------------------------------------------------------------------
+%输入参数说明
+%--------------------------------------------------------------------------
+%f_test：目标函数
+%g_test：目标函数对变量x的导数
+%x_current：x在向量空间中的当前点（已确定）
+%d_current：f_test在x_current的下降搜索方向（已确定）
+%rho：可接受系数，0<rho<1
+%--------------------------------------------------------------------------
+%输出参数
+%--------------------------------------------------------------------------
+%alpha_acceptable：由Goldstein搜索获得的可接受步长
+%x_next：x_next=x_current+alpha_acceptable*d_current
+%f_next：对应于x_next的函数值
+%k：完成Goldstein搜索所需的迭代次数
+%==========================================================================
+%==========================================================================
+%主程序及说明
+%--------------------------------------------------------------------------
+%在调用本程序的上级程序中定义f_test和g_test的表达式
+%alpha_k:经过k次Goldstein搜索后，获得的步长值
+%alpha_k_temp:临时存储alpha_k，旧的alpha_k在程序中还要保留用于赋值
+%alpha_lower_k：在[alpha_lower_k,alpha_k]使用两点外插公式II，alpha_k的下限
+%alpha_upper_k：在[alpha_lower_k,alpha_k]使用两点内插公式I，alpha_k的上限
+%alpha_lower_k的初值设为0
+%alpha_upper_k的初值为alpha_initial
+%f_current：f_test在x_current处的函数值
+%g_current：g_test在x_current处的函数值
+%f_alpha_lower_k：f_test在x_lower_k处的函数值
+%g_alpha_lower_k：g_test在x_lower_k处的函数t
+%df_alpha_lower_k：f_test对alpha的导数在x_lower_k处的函数值
+%x_alpha_k=x_current+alpha_k*d_current
+%f_alpha_k：f_test在x_alpha_k处的函数值
+%g_alpha_k：g_test在x_alpha_k处的函数值
+%df_alpha_k：f_test对alpha的导数在x_alpha_k处的函数值
+%k_max：最大迭代次数，防止程序陷入循环而设置，在这里设为1000
+%--------------------------------------------------------------------------
+k_max=1000;%1000
+k=0;
+f_current=f_test(x_current);
+g_current=g_test(x_current);
+f_alpha_lower_k=f_current;
+
+%alpha_lower_k初值为0，此时f_alpha_lower_k等于f_current
+g_alpha_lower_k=g_current;
+df_alpha_lower_k=(d_current')*g_alpha_lower_k;
+f_alpha_lower_0=f_alpha_lower_k;
+df_alpha_lower_0=df_alpha_lower_k;
+%--------------------------------------------------------------------------
+%估计alpha_initial的值，并防止alpha_initial过大或过小
+%--------------------------------------------------------------------------
+tolerance=1e-15;
+if(abs(df_alpha_lower_k)>tolerance)
+    alpha_initial=-2*f_alpha_lower_k/df_alpha_lower_k;
+else
+    alpha_initial=1;
+end
+if(alpha_initial<tolerance)
+     alpha_initial=1;
+end
+alpha_lower_k=0;
+alpha_upper_k=1e8;
+alpha_k=alpha_initial;
+%--------------------------------------------------------------------------
+%开始Goldstein非精确插值搜索
+%--------------------------------------------------------------------------
+for k=1:k_max
+    k
+    alpha_lower_k
+    alpha_k
+
+    x_alpha_k=x_current+alpha_k*d_current
+    f_alpha_k=f_test(x_alpha_k)
+    g_alpha_k=g_test(x_alpha_k);
+    df_alpha_k=(d_current')*g_alpha_k
+      %---------------画alpha-lower-----+++++++++
+plot(alpha_lower_k,f_alpha_lower_k,'*')
+plot(alpha_k,f_alpha_k,'o')
+%+++++++++++++++++++++++++++++++++++++++++++
+    Goldstein_condition1=f_alpha_k-f_alpha_lower_0-rho*alpha_k*df_alpha_lower_0
+    %即Armijo条件
+    Goldstein_condition2=f_alpha_lower_0-f_alpha_k+(1-rho)*alpha_k*df_alpha_lower_0
+    if(Goldstein_condition1<=0)
+        if(Goldstein_condition2<=0)
+        %Goldstein_condition1和Goldstein_condition2都满足
+        alpha_acceptable=alpha_k;
+        x_next=x_alpha_k;
+        f_next=f_alpha_k;
+        break;
+        else
+           %仅 Goldstein_condition1满足，对alpha_lower_k和alpha_k两点外插公式II
+            delta_alpha_k=(alpha_k-alpha_lower_k)*df_alpha_k/(df_alpha_lower_k-df_alpha_k)
+            if(delta_alpha_k<=0)
+                alpha_k_temp=2*alpha_k;
+                %外插特殊情况处理
+            else
+                alpha_k_temp=alpha_k+delta_alpha_k
+            end
+            alpha_lower_k=alpha_k;%更新可接受步长的下边界
+            f_alpha_lower_k=f_alpha_k;
+            df_alpha_lower_k=df_alpha_k;
+            alpha_k=alpha_k_temp;
+        end
+    else %Goldstein_condition1不满足，对alpha_lower_k和alpha_k两点内插公式I
+        if(alpha_k<alpha_upper_k)
+            alpha_upper_k=alpha_k;%更新可接受步长的上边界
+        end
+        alpha_k_temp=alpha_lower_k+(1/2)*(((alpha_k-alpha_lower_k)^2)*df_alpha_lower_k)/(f_alpha_lower_k-f_alpha_k+(alpha_k-alpha_lower_k)*df_alpha_lower_k);
+        alpha_k=alpha_k_temp;
+    end
+    if(alpha_upper_k-alpha_lower_k<tolerance)
+        %防止在过小区间内搜索
+        alpha_acceptable=alpha_k;
+        x_next=x_alpha_k;
+        f_next=f_alpha_k;
+        break;
+    end
+end
+if(Goldstein_condition1>0)||(Goldstein_condition2>0)
+    disp('Goldstein inexact line search algorithm failed');
+    %经过k_max次搜索后未找到可接受的步长
+    alpha_acceptable=NaN;
+    x_next=NaN;
+    f_next=NaN;
+end
+end
+%==========================================================================
+
