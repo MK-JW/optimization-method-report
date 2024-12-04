@@ -17,7 +17,7 @@ function [alpha_acceptable] = Armijo_wolfe_search(f_test,g_test,x_current,d_curr
     f_x_alpha_lower_0 = f_x_alpha_lower_k;
     df_x_alpha_lower_0 = f_x_alpha_lower_k;
     tolerance = 10^-15;
-    if(abs(df_x_alpha_lower_k) <tolerance)
+    if(abs(df_x_alpha_lower_k) >tolerance)
       alpha_k = -2*f_x_alpha_lower_k/df_x_alpha_lower_k;
     else
         alpha_k = 1;
