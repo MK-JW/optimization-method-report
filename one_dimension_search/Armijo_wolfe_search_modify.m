@@ -1,8 +1,8 @@
 clc
 clear
 %%  一个例子
-x_current1 = 5;d_current1 = 1;roh1 = 0.1;sigma1 = 0.11;
-x_current2 = -2;d_current2 = 1;roh2 = 0.11;sigma2 = 0.1;
+x_current1 = 5;d_current1 = 1;roh1 = 0.1;sigma1 = 0.1;
+x_current2 = -2;d_current2 = 1;roh2 = 0.1;sigma2 = 0.1;
 [alpha_acceptable1] = Armijo_wolfe_search(@f_test1,@g_test1,x_current1,d_current1,roh1,sigma1);
 [alpha_acceptable2] = Armijo_wolfe_search(@f_test2,@g_test2,x_current2,d_current2,roh2,sigma2);
 %%  Armijo_wolfe_search
@@ -13,10 +13,13 @@ function [alpha_acceptable] = Armijo_wolfe_search(f_test,g_test,x_current,d_curr
     alpha_upper_k = 10^8;
     x_alpha_lower_k = x_current + alpha_lower_k*d_current;
     f_x_alpha_lower_k = f_test(x_alpha_lower_k);
-    df_x_alpha_lower_k = g_test(x_alpha_lower_k)*d_current;
+    df_x_alpha_lower_k = d_current'*g_test(x_alpha_lower_k);
     f_x_alpha_lower_0 = f_x_alpha_lower_k;
     df_x_alpha_lower_0 = f_x_alpha_lower_k;
     tolerance = 10^-15;
+%     if(df_x_alpha_lower_0> 0)
+%         df_x_alpha_lower_0 = -df_x_alpha_lower_0;
+%     end
     if(abs(df_x_alpha_lower_k) >tolerance)
       alpha_k = -2*f_x_alpha_lower_k/df_x_alpha_lower_k;
     else
@@ -28,9 +31,9 @@ function [alpha_acceptable] = Armijo_wolfe_search(f_test,g_test,x_current,d_curr
     for k = 1:k_max
         x_alpha_k = x_current + alpha_k*d_current;
         f_x_alpha_k = f_test(x_alpha_k);
-        df_x_alpha_k = g_test(x_alpha_k)*d_current;
+        df_x_alpha_k = d_current'*g_test(x_alpha_k);
         Armijo_condition = f_x_alpha_k - f_x_alpha_lower_0 - rho*df_x_alpha_lower_0*alpha_k;
-        wolfe_condition = abs(df_x_alpha_k) - sigma*abs(df_x_alpha_lower_0);
+        wolfe_condition =  abs(df_x_alpha_k) - sigma*abs(df_x_alpha_lower_0);
         if(Armijo_condition <=0)
             if(wolfe_condition <=0)
                 alpha_acceptable = alpha_k;
@@ -39,7 +42,7 @@ function [alpha_acceptable] = Armijo_wolfe_search(f_test,g_test,x_current,d_curr
                 if(df_x_alpha_k <0)
                     delta_alpha_k = (alpha_k - alpha_lower_k)*df_x_alpha_k/(df_x_alpha_lower_k - df_x_alpha_k);
                     if(delta_alpha_k <=0)
-                        alpha_k_temp = 2*alpha_k;
+                        alpha_k_temp = alpha_k - delta_alpha_k;
                     else
                         alpha_k_temp = alpha_k + delta_alpha_k;
                     end
