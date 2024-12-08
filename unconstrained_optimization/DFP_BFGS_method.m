@@ -5,6 +5,8 @@ addpath('D:\matlab\Optimization method\one_dimension_search');
 x_initial = [1;1]; tolerance = 10^-15;
 [a,b,c] = DFP_METHOD(@f_test1,@g_test1,x_initial,tolerance);
 [e,f,g] = BFGS_METHOD(@f_test1,@g_test1,x_initial,tolerance);
+
+
 %%  function DFP algorithm
 function [x_optimal,f_optimal,k] = DFP_METHOD(f_test,g_test,x_initial,tolerance)
 % % %   这里面的步长和牛顿法一样
@@ -35,6 +37,8 @@ function [x_optimal,f_optimal,k] = DFP_METHOD(f_test,g_test,x_initial,tolerance)
 %     f_optimal = f_test(x_optimal);
 % end
 % end
+
+
 %%  结合一下一维搜索方法
 k = 1;
 sigma = 0.11;
@@ -78,23 +82,60 @@ end
 x_optimal = x_next;
 f_optimal = f_next;
 end
+
+
 %%  function BFGS algorithm
 function [x_optimal,f_optimal,k] = BFGS_METHOD(f_test,g_test,x_initial,tolerance)
-%% 还是经典的没有增加一维搜索
+% %% 还是经典的没有增加一维搜索
+% k = 1;
+% x_current = x_initial;
+% n = length(x_current);
+% g_current = g_test(x_current);
+% Q_current = eye(n);
+% d_current = -Q_current*g_current;
+% x_next = x_current + d_current;
+% while(norm(x_next - x_current)> tolerance)
+%     k = k+1;
+%     x_previous = x_current;
+%     x_current = x_next;
+%     g_previous = g_test(x_previous);
+%     g_current = g_test(x_current);
+%     Q_previous = Q_current;
+%     s_current = x_current - x_previous;
+%     y_current = g_current - g_previous;
+%     if(Q_previous< 0)
+%         Q_current = eye(n);
+%     else
+%         formula1 = 1 + (y_current'*Q_previous*y_current)/(y_current'*s_current);
+%         formula2 = (s_current*s_current')/(s_current'*y_current);
+%         formula3 = ((Q_previous*y_current*s_current')+(Q_previous*y_current*s_current')')/(y_current'*s_current);
+%         Q_current = Q_previous + formula1*formula2 - formula3;
+%     end
+%     d_current  = -Q_current*g_current;
+%     x_next = x_current + d_current;
+% end
+% x_optimal = x_next;
+% f_optimal = f_test(x_optimal);
+
+
+%%  将一维搜索方法添加
 k = 1;
+rho = 0.1;
+sigma = 0.11;
 x_current = x_initial;
 n = length(x_current);
 g_current = g_test(x_current);
 Q_current = eye(n);
-d_current = -Q_current*g_current;
-x_next = x_current + d_current;
+d_current =  -Q_current*g_current;
+[alpha] = Armiji_wolfe_search(f_test,g_test,x_current,d_current,rho,sigma);
+x_next = x_current + alpha*d_current;
 while(norm(x_next - x_current)> tolerance)
     k = k+1;
     x_previous = x_current;
     x_current = x_next;
+    Q_previous = Q_current;
     g_previous = g_test(x_previous);
     g_current = g_test(x_current);
-    Q_previous = Q_current;
     s_current = x_current - x_previous;
     y_current = g_current - g_previous;
     if(Q_previous< 0)
@@ -105,13 +146,18 @@ while(norm(x_next - x_current)> tolerance)
         formula3 = ((Q_previous*y_current*s_current')+(Q_previous*y_current*s_current')')/(y_current'*s_current);
         Q_current = Q_previous + formula1*formula2 - formula3;
     end
-    d_current  = -Q_current*g_current;
-    x_next = x_current + d_current;
+    d_current = Q_current*g_current;
+    [alpha] = Armijo_wolfe_search(f_test,g_test,x_current,d_current,rho,sigma);
+    if(isnan(alpha))
+        rho = rho+1;
+        sigma = sigma+1;
+        continue;
+    else
+        x_next = x_curremt + alpha*d_current;
+    end
 end
 x_optimal = x_next;
 f_optimal = f_test(x_optimal);
-%%  将一维搜索方法添加
-
 end
 %%  function test
 function f_test1 = f_test1(x)
