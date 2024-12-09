@@ -127,7 +127,7 @@ n = length(x_current);
 g_current = g_test(x_current);
 Q_current = eye(n);
 d_current =  -Q_current*g_current;
-[alpha] = Armiji_wolfe_search(f_test,g_test,x_current,d_current,rho,sigma);
+[alpha] = Armijo_wolfe_search(f_test,g_test,x_current,d_current,rho,sigma);
 x_next = x_current + alpha*d_current;
 while(norm(x_next - x_current)> tolerance)
     k = k+1;
@@ -153,7 +153,7 @@ while(norm(x_next - x_current)> tolerance)
         sigma = sigma+1;
         continue;
     else
-        x_next = x_curremt + alpha*d_current;
+        x_next = x_current + alpha*d_current;
     end
 end
 x_optimal = x_next;
