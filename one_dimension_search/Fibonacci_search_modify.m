@@ -55,6 +55,7 @@ function [alpha_star] = Fibonacci_search(f_test,alpha_lower,alpha_upper,toleranc
         f_x_right_k = f_test(x_current_right_k);
         k = k+1;
     end
+    %一次对分搜索法
     if(tolerance >10^8)
         disturbance_quantity = 10^-9;
     else
