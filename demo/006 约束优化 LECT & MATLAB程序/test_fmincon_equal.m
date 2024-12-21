@@ -9,7 +9,7 @@ lb=[];
 ub=[];
 exitflag=1;
 options = optimoptions('fmincon','Display','iter','Algorithm','interior-point');
-[x,fval,exitflag,output,lambda]=fmincon(fun,x0,A,b,Aeq,beq,lb,ub,@mycon,options)
+[x,fval,exitflag,output,lambda] = fmincon(fun,x0,A,b,Aeq,beq,lb,ub,@mycon,options);
 lambda.eqlin
 lambda.eqnonlin
 lambda.ineqlin
