@@ -6,8 +6,10 @@
 -2、常见的一维搜索方法的matlab代码
 -3、常见无约束优化方法的matlab代码
 ## 最后
--最后在课程报告写完后会上传课程报告的latex模板，本课程报告模板主要
+最后在课程报告写完后会上传课程报告的latex模板，本课程报告模板主要
 基于北京理工大学与西南大学的latex课程报告模板
--附：
--北京理工大学课程报告模板[Github主页](https://github.com/xxmy7/RUC_Report_Latex_Template)
--西南交通大学课程报告模板[Github主页](https://github.com/Pungjay/swjtuReport)
+附：  
+
+北京理工大学课程报告模板[Github主页](https://github.com/xxmy7/RUC_Report_Latex_Template)  
+
+西南交通大学课程报告模板[Github主页](https://github.com/Pungjay/swjtuReport)
