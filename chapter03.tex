@@ -1,0 +1,177 @@
+\section{无约束优化方法}
+\subsection{梯度下降法}
+梯度下降方法是无约束优化方法中一种较为简单的方法，其实现原理主要利用了目标函数的梯度信息，通过确定迭代方向为负梯度方向结合泰勒展开可以知道迭代方向一定是下降的，梯度下降法实现原理如下：
+
+\begin{itemize}
+    \item[1、] 给定目标函数、目标函数梯度、初始点x与终止误差
+    \item[2、] 通过初始点与目标函数梯度，结合一维搜索可以得到下一个迭代点直至满足终止误差
+    \item[3、] 迭代次数加一
+\end{itemize}
+
+\subsection{共轭梯度法}
+共轭梯度法是基于共轭方向方法与梯度信息的方法，对于一个二次型函数，它的初始方向为初始点处的负梯度方向，而后续方向是与上一迭代点方向Q共轭的。利用下一个迭代方向确定下一个迭代点。对于一个非二次型函数，本报告采用的是Dai-Yuan法来进行方向的更新，梯度下降法实现基本原理如下：
+
+\begin{itemize}
+    \item[1、] 给定目标函数、目标函数梯度、初始点x与终止误差
+    \item[2、] 通过初始点与目标函数梯度，结合一维搜索并且利用DY法得到下一个迭代方向直至满足终止误差
+    \item[3、] 迭代次数加一
+\end{itemize}
+
+\subsection{拟牛顿法}
+拟牛顿法是基于牛顿法的改进方法。拟牛顿方法的思想是由于牛顿方向需要计算海塞矩阵的逆的信息，这可能会有较大的计算量以及误差并且如果矩阵非正定修正难度较大，所以考虑一个新的矩阵Q，该矩阵能够替代海塞矩阵的逆 $H^{-1}$,这样就可以得到Q的跟新公式即DFP的方法并且保正矩阵是正定的，而DFP方法在使用的过程中对于大规模非二次型目标函数计算可能较慢，所以考虑其对偶问题即BFGS方法（变尺度法），他们的基本原理如下：
+
+\begin{itemize}
+    \item[1、] 给定目标函数、目标函数梯度、初始点x与终止误差
+    \item[2、] 设定初始Q为单位矩阵I，利用DFP或BFGS公式跟新拟牛顿方向，得到新的迭代点直至满足终止条件
+    \item[3、] 迭代次数加一
+\end{itemize}
+
+\newpage
+\begin{lstlisting}[style=matlab, title="梯度下降方法代码"]
+function [x_optimal,f_optimal,k] = negative_gradient(f_test,g_test,x_initial,tolerance)
+k = 1;
+rho = 0.1;
+sigma = 0.11;
+x_current = x_initial;
+g_current = g_test(x_current);
+d_current = -g_current;
+[alpha_acceptable] = Armijo_wolfe_search(f_test,g_test,x_current,d_current,rho,sigma);  %强wolfe条件
+% [alpha_star] = Fabonacci(f_test,0,2,10^-9,x_current,d_current); %斐波那契
+x_next = x_current + alpha_acceptable*d_current;
+% x_next = x_current + alpha_star*d_current;
+while(norm(x_next - x_current)> tolerance)
+    k = k+1;
+    x_current = x_next;
+    g_current = g_test(x_current);
+    d_current = -g_current;
+    x_next = x_current + alpha_acceptable*d_current;
+%     x_next = x_current + alpha_star*d_current;
+end
+x_optimal = x_next;
+f_optimal = f_test(x_optimal);
+end
+\end{lstlisting}
+
+\newpage
+\begin{lstlisting}[style=matlab, title="共轭梯度方法代码"]
+function  [x_optimal,f_optimal,k] = conjugate_gradient(f_test,g_test,x_initial,tolerance)
+k  = 1;
+rho = 0.1; sigma = 0.11;
+x_current = x_initial;
+n = length(x_current);
+g_current = g_test(x_current);
+d_current = -g_current;
+[alpha_acceptable] = Armijo_wolfe_search(f_test,g_test,x_current,d_current,rho,sigma);
+x_next = x_current + alpha_acceptable*d_current;
+while(norm(x_next - x_current)> tolerance)
+    k  = k+1;
+    g_previous = g_current;
+    d_previous = d_current;
+    x_current = x_next;
+    g_current = g_test(x_current);
+    if(mod(k,n) == 0)
+        d_current = -g_current;
+    else
+        beta_current = (g_current'*g_current)/(d_previous'*(g_current - g_previous));
+        d_current = -g_current + beta_current*d_previous;
+    end
+    [alpha_acceptable] = Armijo_wolfe_search(f_test,g_test,x_current,d_current,rho,sigma);
+    x_next = x_current + alpha_acceptable*d_current;
+end
+x_optimal = x_next;
+f_optimal = f_test(x_optimal);
+end
+\end{lstlisting}
+
+\newpage
+\begin{lstlisting}[style=matlab, title="拟牛顿方法代码"]
+function [x_optimal,f_optimal,k] = DFP_METHOD(f_test,g_test,x_initial,tolerance)
+%%  结合一下一维搜索方法
+k = 1;
+sigma = 0.11;
+rho = 0.1;
+x_current = x_initial;
+n = length(x_current);
+Q_current = eye(n);
+g_current = g_test(x_current);
+d_current = -Q_current*g_current;
+[alpha_acceptable] = Fibonacci(f_test,0,2,10^-9,x_current,d_current);   %斐波那契额精确搜索
+% [alpha_acceptable] = Armijo_wolfe_search(f_test,g_test,x_current,d_current,rho,sigma);% 强wolfe非精确搜索
+x_next = x_current + alpha_acceptable*d_current;
+f_next = f_test(x_next);
+while(norm(x_next - x_current)> tolerance)
+    k = k+1;
+    x_previous = x_current;
+    x_current = x_next;
+    g_previous = g_test(x_previous);
+    g_current = g_test(x_current);
+    Q_previous = Q_current;
+    s_current = x_current - x_previous;
+    y_current = g_current - g_previous;
+    if(s_current'*y_current<= 0)    %拟牛顿方向正定条件
+        Q_current = eye(n);
+    else
+        Q_current = Q_previous + ((s_current)*(s_current)')/((s_current)'*(y_current)) - ((Q_current*y_current)*(Q_current*y_current)')...
+        /(y_current'*Q_current*y_current);  %DFP更新公式
+    end
+    d_current = -Q_current*g_current;
+%     [alpha_acceptable] = Armijo_wolfe_search(f_test,g_test,x_current,d_current,rho,sigma);
+    [alpha_acceptable] = Fibonacci(f_test,0,2 ,10^-9,x_current,d_current);
+    if(isnan(alpha_acceptable)) %放宽Armijo_wolfe条件
+        rho = rho + 0.1;
+        sigma = sigma + 0.1;
+        continue;
+    else
+        x_next = x_current + alpha_acceptable*d_current;
+        f_next = f_test(x_next);
+    end
+end
+x_optimal = x_next;
+f_optimal = f_next;
+end
+
+
+%%  function BFGS algorithm
+function [x_optimal,f_optimal,k] = BFGS_METHOD(f_test,g_test,x_initial,tolerance)
+%%  将一维搜索方法添加
+k = 1;
+rho = 0.1;
+sigma = 0.11;
+x_current = x_initial;
+n = length(x_current);
+g_current = g_test(x_current);
+Q_current = eye(n);
+d_current =  -Q_current*g_current;
+[alpha] = Armijo_wolfe_search(f_test,g_test,x_current,d_current,rho,sigma);
+x_next = x_current + alpha*d_current;
+while(norm(x_next - x_current)> tolerance)
+    k = k+1;
+    x_previous = x_current;
+    x_current = x_next;
+    Q_previous = Q_current;
+    g_previous = g_test(x_previous);
+    g_current = g_test(x_current);
+    s_current = x_current - x_previous;
+    y_current = g_current - g_previous;
+    if(Q_previous< 0)
+        Q_current = eye(n);
+    else
+        formula1 = 1 + (y_current'*Q_previous*y_current)/(y_current'*s_current);
+        formula2 = (s_current*s_current')/(s_current'*y_current);
+        formula3 = ((Q_previous*y_current*s_current')+(Q_previous*y_current*s_current')')/(y_current'*s_current);
+        Q_current = Q_previous + formula1*formula2 - formula3;
+    end
+    d_current = Q_current*g_current;
+    [alpha] = Armijo_wolfe_search(f_test,g_test,x_current,d_current,rho,sigma);
+    if(isnan(alpha))
+        rho = rho+1;
+        sigma = sigma+1;
+        continue;
+    else
+        x_next = x_current + alpha*d_current;
+    end
+end
+x_optimal = x_next;
+f_optimal = f_test(x_optimal);
+end
+\end{lstlisting}
