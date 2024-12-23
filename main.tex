@@ -1,0 +1,51 @@
+%!TeX program = xelatex
+\documentclass[12pt,a4paper,UTF8]{ctexart}
+\usepackage{cqu_Report}
+
+
+% 将一级标题改成“第1章”，若\arabic改成\chinese即为“第一章”
+% \usepackage{titletoc}         
+% \ctexset{section={name={第,章},number={\arabic{section}}}}   
+\setmainfont{Times New Roman}
+\begin{document}
+%%------------------------------封面------------------------------%%
+\cover
+\thispagestyle{empty} % 首页不显示页码
+%%------------------------------摘要------------------------------%%
+\newpage
+\pagenumbering{Roman} % 重新计算页码，并将摘要、目录的页码设置成罗马数字页码
+\begin{center}
+    \title{\bfseries \fontsize{22}{24} 从一维搜索到无约束优化方法}
+\end{center}
+\vspace{0.78cm}
+\begin{abstract}\normalsize   % 更改摘要的内容的字体大小
+
+作为一种系统的、基于科学和数学的设计方法，优化设计是现代设计理论与方法的一个重要领域，广泛应用于各工业部门。通过合理的优化方法，可以在满足各种约束条件的前提下，找到最优的设计方案，从而提高产品或系统的性能、降低成本、节省资源并提升整体效率。本报告介绍了常见的一维搜索与无约束优化方法并编写了对应的matlab程序。最后，结合实践过程简要说明了自身的感想与体会。
+
+\vspace{1cm} % 1cm 是空行的高度，可以调整
+\noindent \textbf{关键词：}
+优化设计；优化方法；一维搜索；无约束优化方法；
+
+\end{abstract}
+%%------------------------------目录页----------------------------%%
+\newpage
+\begin{center}
+    \tableofcontents
+\end{center}
+%%------------------------------正文------------------------------%%
+\newpage
+\pagenumbering{arabic} % 重新计算页码，并将正文的页码设置成阿拉伯数字页码
+
+\include{chapters/chapter01}
+\include{chapters/chapter02}
+\include{chapters/chapter03}
+\include{chapters/chapter04}
+%%------------------------------参考文献---------------------------%%
+\newpage
+%%----------- 参考文献 -------------------%%
+%在reference.bib文件中填写参考文献，此处自动生成
+
+\reference
+
+
+\end{document}

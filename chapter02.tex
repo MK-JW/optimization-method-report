@@ -1,0 +1,251 @@
+\section{一维搜索方法}
+
+\subsection{对分搜索法}
+对分搜索法是一维搜索法中较为简单的方法，它的实现原理主要利用了给定区间的中点，有点类似于二分法。对分搜索法实现的基本原理如下：
+
+\begin{itemize}
+    \item[1、] 给定目标函数、初始上下界、终止误差、当前的x值与当前方向
+    \item[2、] 计算中点结合终止误差得到新的上下界，得到上下界对应的函数的值
+    \item[3、] 进行上下界对应函数值判断来更新区间，最后通过终止误差来结束循环
+    \item[4、] 迭代次数加一
+\end{itemize}
+
+值得注意的是，对分搜索法每次区间的缩减率在0.5左右。
+
+\subsection{等间隔法}
+等间隔搜索方法包括多个等间隔搜索，本报告将介绍三点四区间等分搜索方法，三点等分搜索方法缩减率相比二点等分缩减率更低相比于四等分搜索方法地迭代次数更少，其中缩减率为上一区间与更新后区间比值，三等分搜索方法的缩减率为0.5。三等分搜索方法原理如下：
+
+\begin{itemize}
+    \item[1、] 给定目标函数、初始上下界、终止误差、当前的x值与当前方向
+    \item[2、] 将函数区间等分为四份，计算三个等分点
+    \item[3、] 通过上下界与等分点函数值来更新区间，继续迭代直至小于等于终止误差
+    \item[4、] 迭代次数加一
+\end{itemize}
+
+\subsection{斐波那契法}
+斐波那契方法是精确一维搜索方法中收敛速率相对较快的方法，基于斐波那契数列的方法，可以在初始时确定迭代次数与每一次迭代的缩减率，斐波那契方法的原理如下：
+
+\begin{itemize}
+    \item[1、] 给定目标函数、初始上下界、终止误差、当前的x值与当前方向
+    \item[2、] 通过终止误差与初始区间确定迭代次数与每次迭代缩减率
+    \item[3、] 通过区间与缩减率可以得到新的点，通过区间与点对应函数值更新区间直至倒数第二次迭代
+    \item[4、] 倒数第二次两个迭代点重合，此时采用一次对分搜索方法
+    \item[5、] 迭代次数加一
+\end{itemize}
+
+斐波那契方法的缩减率每次迭代是不相同的，并且区间更新是基于对称区间的思想，在第一次计算时需要计算两个迭代点而后续计算只需要计算一个新的迭代点，另一个迭代点只需要利用上一个迭代点的信息即可，在迭代到倒数第二个点时，此时两个迭代点重合，需要采用一次对分搜索法后得到精确步长。
+
+\subsection{黄金分割法}
+黄金分割法的思想是确保每次迭代的缩减率为黄金比例，取缩减率约等于0.618，黄金分割法的原理如下：
+
+\begin{itemize}
+    \item[1、] 给定目标函数、初始上下界、终止误差、当前的x值与当前方向
+    \item[2、] 通过缩减率得到迭代点，通过迭代点的函数值更新区间直至终止法则
+    \item[3、] 迭代次数加一
+\end{itemize}
+
+\subsection{Armijo方法}
+Armijo方法是获取非精确步长的一种方法，Armijo方法的基本思想是利用了初始点的函数值与梯度信息来确定可接受步长范围，通过可接受步长范围结合函数插值的方法可以获取可接受步长，其具体实现原理如下：
+
+\begin{itemize}
+    \item[1、] 给定目标函数、目标函数梯度、当前的x值与当前方向，Armijo条件参数rho
+    \item[2、] 通过初始的区间，确定Armijo条件并进行判断是否达到条件直至满足
+    \item[3、] 迭代次数加一
+\end{itemize}
+
+\subsection{wolfe与强wolfe法}
+wolfe是进一步利用了得到的新的迭代点的梯度信息并于初始点的梯度信息进行比较，当满足条件时即可确定可接受步长。强wolfe条件是在wolfe条件的基础上进一步缩减了区间范围，强wolfe条件确定的可接受步长与精确步长较为接近，强wolfe条件实现基本原理如下：
+
+\begin{itemize}
+    \item[1、] 给定目标函数、目标函数梯度、当前的x值与当前方向，Armijo条件参数rho与wolfe条件参数sigma
+    \item[2、] 通过初始的区间，确定Armijo条件与wolfe条件并进行判断是否达到条件直至满足
+    \item[3、] 迭代次数加一
+\end{itemize}
+
+\newpage
+\begin{lstlisting}[style=matlab, title="对分搜索方法代码"]
+function [alpha_star]=Dichotomous_search(f_test,alpha_lower,alpha_upper,tolerance,x_current,d_current)
+    if(tolerance>=10^-8)
+        disturbance_quantity = 10^-9;
+    else
+        disturbance_quantity = tolerance*0.1;
+    end
+    %   k = 0 时的情况
+    k = 0;
+    alpha_lower_k = alpha_lower;
+    alpha_upper_k = alpha_upper;
+    alpha_left_k = (alpha_lower_k+alpha_upper_k)/2 - disturbance_quantity;
+    alpha_right_k = (alpha_lower_k+alpha_upper_k)/2 + disturbance_quantity;
+    x_current_left_k = x_current+alpha_left_k*d_current;
+    x_current_right_k = x_current+alpha_right_k*d_current;
+    f_alpha_left_k = f_test(x_current_left_k);
+    f_alpha_right_k = f_test(x_current_right_k);
+    %   k >= 1 时的情况
+    while(abs(alpha_upper_k - alpha_lower_k)>tolerance)
+        if(f_alpha_left_k<f_alpha_right_k)
+            alpha_upper_k = alpha_right_k;
+        elseif(f_alpha_left_k>f_alpha_right_k)
+            alpha_lower_k = alpha_left_k;
+        else
+            alpha_upper_k = alpha_right_k;
+            alpha_lower_k = alpha_left_k;
+        end
+        alpha_left_k = (alpha_lower_k+alpha_upper_k)/2 - disturbance_quantity;
+        alpha_right_k = (alpha_lower_k+alpha_upper_k)/2 + disturbance_quantity;
+        x_current_left_k = x_current+alpha_left_k*d_current;
+        x_current_right_k = x_current+alpha_right_k*d_current;
+        f_alpha_left_k = f_test(x_current_left_k);
+        f_alpha_right_k = f_test(x_current_right_k);
+        k = k+1;
+    end
+    alpha_star = (alpha_upper_k+alpha_lower_k)/2;
+end
+\end{lstlisting}
+
+\newpage
+\begin{lstlisting}[style=matlab, title="斐波那契方法代码"]
+function [alpha_star] = Fibonacci_search(f_test,alpha_lower,alpha_upper,tolerance,x_current,d_current)
+    Fabonacci_series_upper = (alpha_upper - alpha_lower)/tolerance;
+    Fabonacci_series = [1,2];
+    n = 2;
+    while(Fabonacci_series(n)<=Fabonacci_series_upper)
+        n = n+1;
+        Fabonacci_series(n) = Fabonacci_series(n-1)+Fabonacci_series(n-2);
+    end
+    %   k = 0时的左右点以及
+    k = 0;
+    reduction_rate_k = Fabonacci_series(n-1)/Fabonacci_series(n);
+    alpha_upper_k = alpha_upper;
+    alpha_lower_k = alpha_lower;
+    L_k = (alpha_upper_k - alpha_lower_k);
+    alpha_left_k = alpha_upper_k - L_k*reduction_rate_k;
+    alpha_right_k = alpha_lower_k + L_k*reduction_rate_k;
+    x_current_left_k = x_current + alpha_left_k*d_current;
+    x_current_right_k = x_current + alpha_right_k*d_current;
+    f_x_left_k = f_test(x_current_left_k);
+    f_x_right_k = f_test(x_current_right_k);
+    %   k>=1时开始迭代
+    while(abs(alpha_right_k - alpha_left_k)>tolerance&&n>=4)
+        n = n - 1;
+        reduction_rate_k = Fabonacci_series(n-1)/Fabonacci_series(n);
+        if(f_x_left_k >f_x_right_k)
+            alpha_lower_k = alpha_left_k;
+            alpha_left_k = alpha_right_k;
+            L_k = abs(alpha_upper_k - alpha_lower_k);
+            alpha_right_k = alpha_lower_k + L_k*reduction_rate_k;
+        elseif(f_x_left_k <f_x_right_k)
+            alpha_upper_k = alpha_right_k;
+            alpha_right_k = alpha_left_k;
+            L_k = abs(alpha_upper_k - alpha_lower_k);
+            alpha_left_k = alpha_upper_k - L_k*reduction_rate_k;
+        else
+            alpha_lower_k = alpha_left_k;
+            alpha_upper_k = alpha_right_k;
+            L_k = abs(alpha_upper_k - alpha_lower_k);
+            alpha_right_k = alpha_lower_k + L_k*reduction_rate_k;
+            alpha_left_k = alpha_upper_k - L_k*reduction_rate_k;
+        end
+        x_current_left_k = x_current + alpha_left_k*d_current;
+        x_current_right_k = x_current + alpha_right_k*d_current;
+        f_x_left_k = f_test(x_current_left_k);
+        f_x_right_k = f_test(x_current_right_k);
+        k = k+1;
+    end
+    %一次对分搜索法
+    if(tolerance >10^8)
+        disturbance_quantity = 10^-9;
+    else
+        disturbance_quantity = tolerance*0.1;
+    end
+    alpha_middle = (alpha_upper_k+alpha_lower_k)/2;
+    alpha_right_k = alpha_middle + disturbance_quantity;
+    alpha_left_k = alpha_middle - disturbance_quantity;
+    x_current_left_k = x_current + alpha_left_k*d_current;
+    x_current_right_k = x_current + alpha_right_k*d_current;
+    f_x_right_k = f_test(x_current_right_k);
+    f_x_left_k = f_test(x_current_left_k);
+    if(f_x_left_k <f_x_right_k)
+        alpha_upper_k = alpha_right_k;
+    elseif(f_x_left_k >f_x_right_k)
+        alpha_lower_k = alpha_left_k;
+    else
+        alpha_upper_k = alpha_rght_k;
+        alpha_lower_k = alpha_left_k;
+    end
+    alpha_star = (alpha_upper_k + alpha_lower_k)/2;
+end
+\end{lstlisting}
+
+\newpage
+\begin{lstlisting}[style=matlab, title="强wolfe方法代码"]
+function [alpha_acceptable] = Armijo_wolfe_search(f_test,g_test,x_current,d_current,rho,sigma)
+    k_max = 1000;
+    k = 0;
+    alpha_lower_k = 0;
+    alpha_upper_k = 10^8;
+    x_alpha_lower_k = x_current + alpha_lower_k*d_current;
+    f_x_alpha_lower_k = f_test(x_alpha_lower_k);
+    df_x_alpha_lower_k = d_current'*g_test(x_alpha_lower_k);
+    f_x_alpha_lower_0 = f_x_alpha_lower_k;
+    df_x_alpha_lower_0 = f_x_alpha_lower_k;
+    tolerance = 10^-15;
+%     if(df_x_alpha_lower_0> 0)
+%         df_x_alpha_lower_0 = -df_x_alpha_lower_0;
+%     end
+    if(abs(df_x_alpha_lower_k) >tolerance)
+      alpha_k = -2*f_x_alpha_lower_k/df_x_alpha_lower_k;
+    else
+        alpha_k = 1;
+    end
+    if(alpha_k - alpha_lower_k <tolerance)
+        alpha_k = 1;
+    end
+    for k = 1:k_max
+        x_alpha_k = x_current + alpha_k*d_current;
+        f_x_alpha_k = f_test(x_alpha_k);
+        df_x_alpha_k = d_current'*g_test(x_alpha_k);
+        Armijo_condition = f_x_alpha_k - f_x_alpha_lower_0 - rho*df_x_alpha_lower_0*alpha_k;
+        wolfe_condition =  abs(df_x_alpha_k) - sigma*abs(df_x_alpha_lower_0);
+        if(Armijo_condition <=0)
+            if(wolfe_condition <=0)
+                alpha_acceptable = alpha_k;
+                break;
+            else
+                if(df_x_alpha_k <0)
+                    delta_alpha_k = (alpha_k - alpha_lower_k)*df_x_alpha_k/(df_x_alpha_lower_k - df_x_alpha_k);
+                    if(delta_alpha_k <=0)
+                        alpha_k_temp = alpha_k - delta_alpha_k;
+                    else
+                        alpha_k_temp = alpha_k + delta_alpha_k;
+                    end
+                    alpha_lower_k = alpha_k;
+                    f_x_alpha_lower_k = f_x_alpha_k;
+                    df_x_alpha_lower_k = df_x_alpha_k;
+                    alpha_k = alpha_k_temp;
+                else
+                    if(alpha_k<alpha_upper_k)
+                        alpha_upper_k = alpha_k;
+                    end
+                    alpha_k_temp = alpha_lower_k - (1/2)*((alpha_k - alpha_lower_k)^2*df_x_alpha_lower_k)/(f_x_alpha_k - ...
+                    f_x_alpha_lower_k - df_x_alpha_lower_k*(alpha_k - alpha_lower_k));
+                    alpha_k = alpha_k_temp;
+                end
+            end
+        else
+            if(alpha_k <alpha_upper_k)
+                alpha_upper_k = alpha_k;
+            end
+            alpha_k_temp = alpha_lower_k - (1/2)*((alpha_k - alpha_lower_k)^2*df_x_alpha_lower_k)/(f_x_alpha_k - ...
+                f_x_alpha_lower_k - df_x_alpha_lower_k*(alpha_k - alpha_lower_k));
+            alpha_k = alpha_k_temp;
+        end
+        if(alpha_upper_k - alpha_lower_k <tolerance)
+            alpha_acceptable = alpha_k;
+            break;
+        end
+    end
+    if((Armijo_condition >0)||(wolfe_condition>0))
+        alpha_acceptable = NaN;
+    end
+end
+\end{lstlisting}
